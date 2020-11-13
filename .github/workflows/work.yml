@@ -4,6 +4,8 @@ on:
   schedule:
     - cron: '30 16 * * *'
   workflow_dispatch:
+  watch:
+    types: started
 
 jobs:
   run:
