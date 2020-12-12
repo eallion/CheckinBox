@@ -1,3 +1,5 @@
+# -*- coding: utf8 -*-
+
 import requests, base64, json, hashlib, os
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.backends import default_backend
@@ -32,6 +34,7 @@ def protect(text):
 
 def main(*args):
     try:
+        msg = ""
         s=requests.Session()
         header={}
         url="https://music.163.com/weapi/login/cellphone"
@@ -60,13 +63,16 @@ def main(*args):
         object=json.loads(res.text)
         if object['code']==200:
             print("登录成功！")
+            msg += "登录成功！,"
         else:
             print("登录失败！请检查密码是否正确！"+str(object['code']))
+            return "登录失败！请检查密码是否正确！"
 
         res=s.post(url=url2,data=protect('{"type":0}'),headers=headers)
         object=json.loads(res.text)
         if object['code']!=200 and object['code']!=-2:
             print("签到时发生错误："+object['msg'])
+            msg += "签到时发生错误,"
             if SCKEY:
                 scurl = f"https://sc.ftqq.com/{SCKEY}.send"
                 data = {
@@ -77,8 +83,10 @@ def main(*args):
         else:
             if object['code']==200:
                 print("签到成功，经验+"+str(object['point']))
+                msg += "签到成功,"
             else:
                 print("重复签到")
+                msg += "重复签到,"
 
 
         res=s.post(url=url3,data=protect('{"csrf_token":"'+requests.utils.dict_from_cookiejar(tempcookie)['__csrf']+'"}'),headers=headers)
@@ -118,9 +126,13 @@ def main(*args):
         res=s.post(url,protect(json.dumps(postdata)))
         object=json.loads(res.text,strict=False)
         if object['code']==200:
-            print("刷单成功！共"+str(count)+"首")
+            text = "刷单成功！共"+str(count)+"首"
+            print(text)
+            msg += text
         else:
-            print("发生错误："+str(object['code'])+object['message'])
+            text = "发生错误："+str(object['code'])+object['message']
+            print(text)
+            msg += text
             if SCKEY:
                 scurl = f"https://sc.ftqq.com/{SCKEY}.send"
                 data = {
@@ -130,8 +142,12 @@ def main(*args):
                 requests.post(scurl, data=data)
     except Exception as e:
         print('repr(e):', repr(e))
+        msg += '运行出错,repr(e):'+repr(e)
+    return msg
 
 
 if __name__ == "__main__":
     if netease_username and netease_password:
+        print("----------网易云音乐开始尝试执行日常任务----------")
         main()
+        print("----------网易云音乐日常任务执行完毕----------")

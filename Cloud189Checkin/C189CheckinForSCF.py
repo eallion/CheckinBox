@@ -1,3 +1,5 @@
+# -*- coding: utf8 -*-
+
 import requests, time, re, rsa, json, base64, os
 from urllib import parse
 
@@ -9,9 +11,10 @@ scurl = f"https://sc.ftqq.com/{SCKEY}.send"
 
 def C189Checkin(*args):
     try:
+        msg = ""
         s = login(username, password)
         if(s == "error"):
-            return None
+            return "天翼云盘登录出错"
         else:
             pass
         rand = str(round(time.time()*1000))
@@ -25,37 +28,50 @@ def C189Checkin(*args):
             "Accept-Encoding" : "gzip, deflate",
         }
         #签到
-        response = s.get(surl,headers=headers)
+        response = s.get(surl,headers=headers,timeout=20)
         netdiskBonus = response.json()['netdiskBonus']
         if(response.json()['isSign'] == "false"):
-            print(f"未签到，签到获得{netdiskBonus}M空间")
+            print(f"未签到，签到获得  {netdiskBonus}  M空间")
+            msg += f"未签到，签到获得  {netdiskBonus}  M空间\n"
         else:
-            print(f"已经签到过了，签到获得{netdiskBonus}M空间")
+            print(f"已经签到过了，签到获得  {netdiskBonus}  M空间")
+            msg += f"已经签到过了，签到获得  {netdiskBonus}  M空间,"
 
         #第一次抽奖
-        response = s.get(url,headers=headers)
+        response = s.get(url,headers=headers,timeout=20)
         if ("errorCode" in response.text):
-            if(response.json()['errorCode'] == "User_Not_Chance"):
+            if("User_Not_Chance" in response.text):
                 print("抽奖次数不足")
+                msg += "抽奖次数不足,"
+            elif("InternalError" in response.text):
+                print("内部错误，可能是活动下线")
+                msg += "内部错误，可能是活动下线,"
             else:
                 print(response.text)
+                msg += "第一次抽奖出错,"
                 if(SCKEY != ""):
                     data = {
-                        "text" : "抽奖出错",
+                        "text" : "第一次抽奖出错",
                         "desp" : response.text
                         }
                     sc = requests.post(scurl, data=data)
         else:
             description = response.json()['description']
-            print(f"抽奖获得{description}")
+            print(f"抽奖获得  {description}  ")
+            msg += f"抽奖获得  {description}  ,"
 
         #第二次抽奖
-        response = s.get(url2,headers=headers)
+        response = s.get(url2,headers=headers,timeout=20)
         if ("errorCode" in response.text):
-            if(response.json()['errorCode'] == "User_Not_Chance"):
+            if("User_Not_Chance" in response.text):
                 print("抽奖次数不足")
+                msg += "抽奖次数不足,"
+            elif("InternalError" in response.text):
+                print("内部错误，可能是活动下线")
+                msg += "内部错误，可能是活动下线,"
             else:
                 print(response.text)
+                msg += "第二次抽奖出错,"
                 if(SCKEY != ""):
                     data = {
                         "text" : "第二次抽奖出错",
@@ -64,7 +80,8 @@ def C189Checkin(*args):
                     sc = requests.post(scurl, data=data)
         else:
             description = response.json()['description']
-            print(f"抽奖获得{description}")
+            print(f"抽奖获得  {description}  ")
+            msg += f"抽奖获得  {description}  ,"
     except Exception as e:
         print("天翼云签到出错：", repr(e))
         if(SCKEY != ""):
@@ -73,6 +90,8 @@ def C189Checkin(*args):
                 "desp" : repr(e)
                 }
             sc = requests.post(scurl, data=data)
+        msg += "天翼云签到出错："+repr(e)
+    return msg
 
 BI_RM = list("0123456789abcdefghijklmnopqrstuvwxyz")
 def int2char(a):
@@ -167,4 +186,6 @@ def login(username, password):
 
 if __name__ == "__main__":
     if username and password:
+        print("----------天翼云盘开始尝试签到----------")
         C189Checkin()
+        print("----------天翼云盘签到执行完毕----------")
